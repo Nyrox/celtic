@@ -1,5 +1,6 @@
 foobar
 
+#[env(TARGET)]
 #[include(tests/foo.test)]
 
 ceetwo

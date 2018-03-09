@@ -1,7 +1,11 @@
+extern crate dotenv;
+
 use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::iter::Peekable;
+
+mod macros;
 
 #[derive(Default, Debug)]
 struct Options {
@@ -9,7 +13,24 @@ struct Options {
 	out: Option<String>
 }
 
+#[derive(Clone, Debug)]
+pub enum MacroValue {
+	BOOL(bool),
+	STRING(String)
+}
+
+impl MacroValue {
+	pub fn try_as_string(self) -> Result<String, &'static str>{
+		match self {
+			MacroValue::STRING(s) => Ok(s),
+			_ => Err("")
+		}
+	}
+}
+
 fn main() {
+	dotenv::dotenv().ok();
+	
 	let mut options = Options::default();
 	
 	let mut it_arg = env::args().skip(1);
@@ -38,8 +59,6 @@ fn main() {
 	let mut input_file = File::open(options.input.clone().unwrap()).unwrap();
 	let mut buffer = String::new();
 	input_file.read_to_string(&mut buffer);
-	
-	println!("{}", buffer);
 	
 	let mut output = String::new();
 	
@@ -72,27 +91,23 @@ fn main() {
 	
 	let mut outFile = File::create(options.out.unwrap()).unwrap();
 	outFile.write_all(output.as_bytes());
-	println!("{}", output);
 }
 
 fn evaluate_macro(_macro: (String, Vec<String>)) -> String {
 	let (function, arguments) = _macro;
 	
 	// TODO: Implement proper plugins
+	let arguments = arguments.into_iter().map(|s| MacroValue::STRING(s)).collect();
 	
 	match &*function {
-		"include" => include(arguments),
+		"include" => macros::include(arguments).unwrap().try_as_string().unwrap(),
+		"env" => "foo".to_string(),
 		_ => panic!("{} is not a vaild macro.", function)
 	}
 }
 
-fn include(arguments: Vec<String>) -> String {
-	println!("{:?}", arguments);
-	let mut f = File::open(&arguments[0]).unwrap();
-	let mut s = String::new();
-	f.read_to_string(&mut s);
-	
-	return s;
+fn env(arguments: Vec<String>) -> String {
+	return env::var(&arguments[0]).unwrap_or("undefined".to_string());
 }
 
 fn parse_macro_invocation(content: String) -> (String, Vec<String>) {
@@ -105,7 +120,7 @@ fn parse_macro_invocation(content: String) -> (String, Vec<String>) {
 	
 	// Parse argument
 	// Skip opening bracket
-	println!("{:?}", chars.next());
+	chars.next();
 	
 	let mut arguments = Vec::new();
 	if chars.peek().unwrap().is_alphanumeric() {
