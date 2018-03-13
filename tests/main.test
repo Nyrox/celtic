@@ -3,4 +3,10 @@ foobar
 #[env(TARGET)]
 #[include(tests/foo.test)]
 
-ceetwo
+#[if: eq(DEVELOPMENT, env(TARGET))]
+Rubberducky time boi
+#[endif]
+
+#[if: eq(RELEASE, env(TARGET))]
+It's action time yo
+#[endif]

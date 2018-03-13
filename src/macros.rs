@@ -13,3 +13,7 @@ pub fn include(params: Vec<MacroValue>) -> Result<MacroValue, Box<Error>> {
 	
 	return Ok(MacroValue::STRING(buffer));
 }
+
+pub fn eq(params: Vec<MacroValue>) -> Result<MacroValue, Box<Error>> {
+	Ok(MacroValue::BOOL(params[0] == params[1]))
+}
